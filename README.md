@@ -13,6 +13,13 @@ Sin instalar nada:
 npx fck-premium-teleprompters
 ```
 
+O instalado como comando, para tenerlo siempre a mano:
+
+```bash
+npm install -g fck-premium-teleprompters
+fck-premium-teleprompters
+```
+
 Sí, falta una letra. El registro de npm tiene un filtro de palabrotas y devuelve
 *«That word is not allowed»* al publicar, así que ahí el paquete va censurado.
 En todo lo demás el nombre se queda como estaba.
@@ -27,7 +34,9 @@ en el iPad y el móvil sin teclear nada.
 El guion se guarda en un `state.json` **en la carpeta desde la que lanzas el
 comando**, así que cada proyecto puede tener el suyo.
 
-El puerto es el 3000; se cambia con `PORT=4000 npx fck-premium-teleprompters`.
+El puerto se busca solo: empieza por el 3000 y, si está ocupado, prueba el
+siguiente hasta dar con uno libre —así puedes tener dos tomas abiertas a la vez—.
+Para empezar a buscar por otro, `PORT=4000 npx fck-premium-teleprompters`.
 
 ### Desde el código
 

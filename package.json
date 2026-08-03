@@ -1,6 +1,6 @@
 {
   "name": "fck-premium-teleprompters",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Teleprompter en red local: editor en el Mac, visor en el iPad, mando en el móvil. Sin cuota, sin cuenta, sin nube.",
   "license": "MIT",
   "type": "module",

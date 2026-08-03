@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { createServer as createProbe } from "node:net";
 import { readFile, rename, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import next from "next";
@@ -14,7 +15,13 @@ import {
 } from "./lib/state.ts";
 import { localAddresses } from "./lib/network.ts";
 
-const PORT = Number(process.env.PORT ?? 3000);
+/**
+ * Puerto por el que se empieza a buscar. Si está ocupado —otra copia del
+ * teleprompter, un `next dev` de otro proyecto— se prueba el siguiente. Sin
+ * esto, arrancar con el 3000 pillado se saldaba con un EADDRINUSE y nada más.
+ */
+const FIRST_PORT = Number(process.env.PORT ?? 3000);
+const HOST = "0.0.0.0";
 const DEV = process.env.NODE_ENV !== "production";
 /**
  * La aplicación de Next vive junto al código del servidor, no en el directorio
@@ -193,7 +200,38 @@ heartbeat.unref();
 
 // --------------------------------------------------------------- arranque
 
-const app = next({ dev: DEV, dir: APP_DIR, hostname: "0.0.0.0", port: PORT });
+/** Cuántos puertos se prueban antes de rendirse. */
+const PORT_ATTEMPTS = 50;
+
+/**
+ * Abre y cierra un servidor de prueba para saber si el puerto está libre. Se
+ * comprueba antes de arrancar, y no reintentando sobre el servidor real,
+ * porque a Next hay que decirle el puerto al construirla.
+ */
+function isFree(port: number): Promise<boolean> {
+  return new Promise((done) => {
+    const probe = createProbe();
+    probe.once("error", () => done(false));
+    probe.once("listening", () => probe.close(() => done(true)));
+    probe.listen(port, HOST);
+  });
+}
+
+async function findPort(first: number): Promise<number> {
+  for (let port = first; port < first + PORT_ATTEMPTS; port += 1) {
+    if (await isFree(port)) return port;
+  }
+  throw new Error(
+    `No hay ningún puerto libre entre el ${first} y el ${first + PORT_ATTEMPTS - 1}.`,
+  );
+}
+
+const PORT = await findPort(FIRST_PORT);
+// La portada genera los QR con la IP local y el puerto; como este ya no es
+// siempre el pedido, se le deja escrito el que ha salido.
+process.env.PORT = String(PORT);
+
+const app = next({ dev: DEV, dir: APP_DIR, hostname: HOST, port: PORT });
 
 await loadState();
 await app.prepare();
@@ -226,9 +264,10 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   });
 }
 
-server.listen(PORT, "0.0.0.0", () => {
+server.listen(PORT, HOST, () => {
   const hosts = ["localhost", ...localAddresses()];
   console.log(`\n  fuck_premium_teleprompters ${DEV ? "(desarrollo)" : "(producción)"}\n`);
+  if (PORT !== FIRST_PORT) console.log(`  (el puerto ${FIRST_PORT} estaba ocupado)\n`);
   for (const host of hosts) {
     console.log(`  http://${host}:${PORT}`);
   }
