@@ -12,10 +12,16 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%;overscroll-behavior:none}
+  /* En Safari de iPhone «100%» es la ventana GRANDE: con la barra de
+     direcciones fuera, el pie queda debajo de ella y no se puede tocar.
+     `dvh` es la ventana de verdad, la que cambia al recogerse la barra. */
+  @supports (height: 100dvh) { html,body{height:100dvh} }
   body{
     background:var(--ink950); color:var(--ink100);
     font:400 16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
     display:flex; flex-direction:column; touch-action:none;
+    /* Safari agranda el texto por su cuenta al girar el móvil. */
+    -webkit-text-size-adjust:100%;
   }
   .bar{
     display:flex; align-items:center; gap:10px; padding:10px 14px;
@@ -52,10 +58,12 @@
         border-top:1px solid var(--ink800);flex:none}
   button.act{
     border:0;border-radius:12px;background:var(--accent-bright);color:var(--ink950);
-    font:600 15px/1 inherit;padding:14px 18px;cursor:pointer;min-height:44px
+    font:600 15px/1 inherit;padding:14px 18px;cursor:pointer;min-height:44px;
+    /* Sin esto «▲ 5 s» se parte en dos líneas en cuanto el móvil es estrecho. */
+    white-space:nowrap
   }
   button.ghost{background:var(--ink850);color:var(--ink100);border:1px solid var(--ink700)}
-  .muted{color:var(--ink500);font-size:13px;font-variant-numeric:tabular-nums}
+  .muted{color:var(--ink500);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
   textarea{
     flex:1;width:100%;resize:none;background:var(--ink900);color:var(--ink100);
     border:1px solid var(--ink800);border-radius:12px;padding:14px;font:400 15px/1.5 inherit;
@@ -100,6 +108,21 @@
   button.card i{color:var(--ink500);font-style:normal;font-size:12px}
   button.card em{margin-left:auto;width:22px;height:22px;border-radius:50%;border:1px solid var(--ink700);flex:none}
   button.card[aria-pressed=true] em{background:var(--accent-bright);border-color:var(--accent-bright)}
+  @media (max-width: 430px){
+    .bar{gap:6px; padding:8px 10px}
+    .foot{gap:8px;padding-left:10px;padding-right:10px}
+    button.act{padding:13px 12px;font-size:14px}
+    .seg button{padding:9px 10px; font-size:12px}
+    #status{display:none}
+    button.icon{width:36px;height:36px}
+  }
+  /* De lado en el móvil queda muy poco alto: la botonera se estrecha para que
+     el guion siga siendo lo más grande de la pantalla. */
+  @media (max-height: 480px){
+    .bar{padding:4px 10px}
+    .foot{padding-top:6px;padding-bottom:max(6px,env(safe-area-inset-bottom))}
+    button.act{padding:10px 14px;min-height:38px}
+  }
   .hide{display:none}
 </style>
 </head>
@@ -251,7 +274,8 @@ const $ = id => document.getElementById(id);
 // La página se escribe en español y se traduce al vuelo si el navegador de
 // quien entra no lo es. Un invitado que abre un enlace no debería toparse con
 // un idioma que no habla solo porque el anfitrión sea de aquí.
-const EN = !(navigator.language || "es").toLowerCase().startsWith("es");
+const IDIOMA = (navigator.languages && navigator.languages[0]) || navigator.language || "";
+const EN = !IDIOMA.toLowerCase().startsWith("es");
 const ES_EN = {
   "Conectando…":"Connecting…", "Conectado":"Connected", "Reconectando…":"Reconnecting…",
   "Visor":"Viewer", "Mando":"Remote", "Editor":"Editor", "Ajustes":"Settings",
