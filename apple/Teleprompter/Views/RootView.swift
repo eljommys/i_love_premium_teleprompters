@@ -8,9 +8,6 @@ struct RootView: View {
     var body: some View {
         modeContent
             .background(Ink.ink950)
-            #if os(macOS)
-                .toolbar { ModeToolbar() }
-            #endif
             .modifier(RemoteSessionHalo(session: model.session))
             .onChange(of: model.session.connection) { _, status in
                 model.connectionChanged(to: status)
@@ -78,20 +75,6 @@ struct RootView: View {
         }
     }
 }
-
-#if os(macOS)
-    /// En el Mac la barra de herramientas lleva el estado de la sesión. Los
-    /// modos no: los cambia el mismo selector que en el iPad y el iPhone.
-    struct ModeToolbar: ToolbarContent {
-        @Environment(AppModel.self) private var model
-
-        var body: some ToolbarContent {
-            ToolbarItem(placement: .primaryAction) {
-                SessionStatusCapsule()
-            }
-        }
-    }
-#endif
 
 /// El aviso de que este aparato está siguiendo la sesión de otro.
 ///
