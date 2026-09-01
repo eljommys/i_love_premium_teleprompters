@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Punto de entrada de `npx github:eljommys/fuck_premium_teleprompters`.
+// Punto de entrada de `npx github:eljommys/i_love_premium_teleprompters`.
 //
 // Arranca el servidor ya compilado que hay en `dist/`. No se ejecuta el
 // `server.ts` original a propósito: Node se niega a quitar los tipos de un

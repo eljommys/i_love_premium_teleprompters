@@ -266,7 +266,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 
 server.listen(PORT, HOST, () => {
   const hosts = ["localhost", ...localAddresses()];
-  console.log(`\n  fuck_premium_teleprompters ${DEV ? "(desarrollo)" : "(producción)"}\n`);
+  console.log(`\n  i_love_premium_teleprompters ${DEV ? "(desarrollo)" : "(producción)"}\n`);
   if (PORT !== FIRST_PORT) console.log(`  (el puerto ${FIRST_PORT} estaba ocupado)\n`);
   for (const host of hosts) {
     console.log(`  http://${host}:${PORT}`);

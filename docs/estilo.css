@@ -1,0 +1,46 @@
+/* La misma paleta de la app: tinta muy oscura y el acento teal. */
+:root{
+  --ground:#f2f6f6; --surface:#ffffff; --sunken:#e7eeee;
+  --ink:#0d1213; --ink-soft:#3d4b4d; --ink-mute:#66787a;
+  --line:#d3dfdf; --accent:#0b7d70;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --ground:#070b0b; --surface:#0f1516; --sunken:#151d1e;
+    --ink:#e6eded; --ink-soft:#b6c5c6; --ink-mute:#87999b;
+    --line:#243031; --accent:#2dd4bf;
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font:400 17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:44rem; margin:0 auto; padding:clamp(2rem,6vw,4.5rem) 1.25rem 5rem}
+header{border-bottom:2px solid var(--ink); padding-bottom:1.4rem; margin-bottom:2.5rem}
+.mark{display:flex; align-items:center; gap:.8rem; margin-bottom:1.2rem}
+.mark svg{flex:none}
+.mark span{font-weight:600; letter-spacing:-.01em}
+h1{font-size:clamp(1.9rem,5vw,2.6rem); line-height:1.1; margin:0 0 .5rem; letter-spacing:-.02em}
+.lede{margin:0; color:var(--ink-soft); font-size:1.05rem}
+h2{font-size:1.25rem; margin:2.5rem 0 .6rem; letter-spacing:-.01em}
+h3{font-size:1rem; margin:1.6rem 0 .4rem}
+p{margin:0 0 1rem; color:var(--ink-soft)}
+strong{color:var(--ink)}
+ul{padding-left:1.15rem; color:var(--ink-soft)}
+li{margin-bottom:.4rem}
+li::marker{color:var(--accent)}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:1.3rem 1.5rem; margin:1.2rem 0}
+.card p:last-child{margin-bottom:0}
+.pill{
+  display:inline-block; font-size:.78rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--accent); border:1px solid var(--accent); border-radius:99px; padding:.3rem .7rem; margin-bottom:1rem;
+}
+.langs{display:flex; gap:.75rem; margin-bottom:2rem; font-size:.9rem}
+.langs a{text-decoration:none; border:1px solid var(--line); border-radius:99px; padding:.35rem .8rem; color:var(--ink-soft)}
+.langs a[aria-current]{border-color:var(--accent); color:var(--accent)}
+footer{margin-top:3.5rem; padding-top:1.4rem; border-top:1px solid var(--line); color:var(--ink-mute); font-size:.88rem}
+footer a{color:var(--ink-mute)}

@@ -1,4 +1,4 @@
-# fuck_premium_teleprompters
+# i_love_premium_teleprompters
 
 Teleprompter en red local. El Mac hace de servidor, el iPad muestra el guion en
 espejo y el móvil lo controla en tiempo real.
@@ -41,8 +41,8 @@ Para empezar a buscar por otro, `PORT=4000 npx fck-premium-teleprompters`.
 ### Desde el código
 
 ```bash
-git clone https://github.com/eljommys/fuck_premium_teleprompters.git
-cd fuck_premium_teleprompters
+git clone https://github.com/eljommys/i_love_premium_teleprompters.git
+cd i_love_premium_teleprompters
 npm install
 npm start
 ```
