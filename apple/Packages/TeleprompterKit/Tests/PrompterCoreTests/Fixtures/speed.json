@@ -1,0 +1,30 @@
+[
+  {
+    "speed": 30,
+    "fontSize": 64,
+    "docHeight": 0,
+    "pxPerSecond": 76.8,
+    "rate": 0
+  },
+  {
+    "speed": 30,
+    "fontSize": 64,
+    "docHeight": 12480,
+    "pxPerSecond": 76.8,
+    "rate": 0.006153846153846154
+  },
+  {
+    "speed": 1,
+    "fontSize": 24,
+    "docHeight": 1000,
+    "pxPerSecond": 0.96,
+    "rate": 0.0009599999999999999
+  },
+  {
+    "speed": 100,
+    "fontSize": 160,
+    "docHeight": 50000,
+    "pxPerSecond": 640,
+    "rate": 0.0128
+  }
+]

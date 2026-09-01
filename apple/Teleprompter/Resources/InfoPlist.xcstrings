@@ -1,0 +1,57 @@
+{
+  "sourceLanguage": "es",
+  "strings": {
+    "CFBundleDisplayName": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Universal Teleprompter"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Universal Teleprompter"
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The camera is only used to read the QR code you use to join another device’s session."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La cámara solo se usa para leer el código QR con el que te unes a una sesión de otro aparato."
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Universal Teleprompter connects your Mac, iPad, and iPhone over your local network so the editor, the viewer, and the remote stay in sync while you record. Your script never leaves your network."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Universal Teleprompter conecta tu Mac, iPad y iPhone por tu red local para que el editor, el visor y el mando vayan sincronizados durante la grabación. Tu guion nunca sale de tu red."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

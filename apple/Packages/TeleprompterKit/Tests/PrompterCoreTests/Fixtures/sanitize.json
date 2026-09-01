@@ -1,0 +1,85 @@
+[
+  {
+    "name": "clamps-high",
+    "input": {
+      "speed": 500,
+      "fontSize": 999,
+      "lineHeight": 9,
+      "margin": 80,
+      "position": 1.5,
+      "docHeight": 1000000000
+    },
+    "output": {
+      "speed": 100,
+      "fontSize": 160,
+      "lineHeight": 2.5,
+      "margin": 30,
+      "position": 1,
+      "docHeight": 10000000
+    }
+  },
+  {
+    "name": "clamps-low",
+    "input": {
+      "speed": -20,
+      "fontSize": 0,
+      "lineHeight": 0.1,
+      "margin": -5,
+      "position": -0.3,
+      "docHeight": -100
+    },
+    "output": {
+      "speed": 1,
+      "fontSize": 24,
+      "lineHeight": 1,
+      "margin": 0,
+      "position": 0,
+      "docHeight": 0
+    }
+  },
+  {
+    "name": "wrong-types",
+    "input": {
+      "text": 42,
+      "playing": "yes",
+      "speed": "fast",
+      "mirrorH": 1,
+      "position": null
+    },
+    "output": {}
+  },
+  {
+    "name": "unknown-keys",
+    "input": {
+      "nope": true,
+      "speed": 50
+    },
+    "output": {
+      "speed": 50
+    }
+  },
+  {
+    "name": "empty",
+    "input": {},
+    "output": {}
+  },
+  {
+    "name": "exact-bounds",
+    "input": {
+      "speed": 1,
+      "fontSize": 160,
+      "lineHeight": 2.5,
+      "margin": 0,
+      "position": 1,
+      "docHeight": 10000000
+    },
+    "output": {
+      "speed": 1,
+      "fontSize": 160,
+      "lineHeight": 2.5,
+      "margin": 0,
+      "position": 1,
+      "docHeight": 10000000
+    }
+  }
+]

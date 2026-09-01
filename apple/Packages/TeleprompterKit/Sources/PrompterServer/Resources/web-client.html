@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Universal Teleprompter</title>
+<style>
+  :root{
+    --ink950:#070b0b; --ink900:#0d1213; --ink850:#131a1b; --ink800:#1a2224;
+    --ink700:#263134; --ink500:#5b6b6e; --ink300:#9aabae; --ink100:#e6eded;
+    --accent:#14b8a6; --accent-bright:#2dd4bf;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overscroll-behavior:none}
+  body{
+    background:var(--ink950); color:var(--ink100);
+    font:400 16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    display:flex; flex-direction:column; touch-action:none;
+  }
+  .bar{
+    display:flex; align-items:center; gap:10px; padding:10px 14px;
+    padding-top:max(10px,env(safe-area-inset-top));
+    background:var(--ink900); border-bottom:1px solid var(--ink800); flex:none;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ink500);flex:none}
+  .dot.online{background:var(--accent-bright)}
+  .dot.off{background:#e0603c}
+  .grow{flex:1}
+  .seg{display:flex;gap:4px;background:var(--ink850);border:1px solid var(--ink700);border-radius:999px;padding:4px}
+  .seg button{
+    border:0;background:none;color:var(--ink300);font:500 13px/1 inherit;
+    padding:9px 12px;border-radius:999px;cursor:pointer;min-height:38px
+  }
+  .seg button[aria-selected=true]{background:var(--accent-bright);color:var(--ink950)}
+  main{flex:1;position:relative;overflow:hidden}
+  .panel{position:absolute;inset:0;display:none;flex-direction:column}
+  .panel.on{display:flex}
+
+  /* ---- guion, igual en visor y mando ---- */
+  .stage{position:relative;flex:1;overflow:hidden;container-type:size;background:#000}
+  .script{will-change:transform;text-align:center;white-space:pre-wrap;word-break:break-word}
+  .mark{position:absolute;left:0;right:0;pointer-events:none;display:flex;align-items:center}
+  .mark .line{flex:1;height:1px;background:color-mix(in srgb,var(--accent) 25%,transparent)}
+  .mark .dot2{width:10px;height:10px;margin:0 6px;background:color-mix(in srgb,var(--accent) 60%,transparent);transform:rotate(45deg)}
+  .band{position:absolute;left:0;right:0;pointer-events:none;background:color-mix(in srgb,var(--accent) 14%,transparent)}
+  .rail{position:absolute;top:20px;bottom:20px;right:6px;width:3px;background:var(--ink800);border-radius:2px}
+  .rail i{position:absolute;left:0;right:0;top:0;background:var(--accent);border-radius:2px;display:block}
+
+  /* ---- controles ---- */
+  .foot{display:flex;gap:10px;align-items:center;padding:10px 14px;
+        padding-bottom:max(10px,env(safe-area-inset-bottom));background:var(--ink900);
+        border-top:1px solid var(--ink800);flex:none}
+  button.act{
+    border:0;border-radius:12px;background:var(--accent-bright);color:var(--ink950);
+    font:600 15px/1 inherit;padding:14px 18px;cursor:pointer;min-height:44px
+  }
+  button.ghost{background:var(--ink850);color:var(--ink100);border:1px solid var(--ink700)}
+  .muted{color:var(--ink500);font-size:13px;font-variant-numeric:tabular-nums}
+  textarea{
+    flex:1;width:100%;resize:none;background:var(--ink900);color:var(--ink100);
+    border:1px solid var(--ink800);border-radius:12px;padding:14px;font:400 15px/1.5 inherit;
+    touch-action:auto
+  }
+  .pad{padding:14px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1;touch-action:auto}
+  label{display:block;font-size:13px;color:var(--ink300);margin-bottom:6px}
+  .row{display:flex;justify-content:space-between;align-items:baseline}
+  .row b{color:var(--accent-bright);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;accent-color:var(--accent-bright)}
+  .gate{position:absolute;inset:0;background:var(--ink950);display:flex;flex-direction:column;
+        align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;z-index:10}
+  .gate input{font:600 28px/1 inherit;letter-spacing:.3em;text-align:center;width:190px;padding:12px;
+    background:var(--ink900);color:var(--accent-bright);border:1px solid var(--ink700);border-radius:12px}
+
+  button.icon{background:var(--ink850);border:1px solid var(--ink700);color:var(--ink100);
+    border-radius:999px;width:40px;height:40px;font-size:17px;cursor:pointer;flex:none}
+  .foot.small{padding:8px 14px}
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;
+    justify-content:center;z-index:20}
+  .sheet-box{background:var(--ink900);width:100%;max-width:620px;max-height:88vh;display:flex;
+    flex-direction:column;border-radius:18px 18px 0 0;border:1px solid var(--ink800)}
+  .sheet-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--ink800)}
+  .sheet-body{padding:16px;display:flex;flex-direction:column;gap:16px;overflow:auto;
+    padding-bottom:max(16px,env(safe-area-inset-bottom));touch-action:auto}
+  .marks{display:flex;gap:8px}
+  .marks button{flex:1;height:44px;background:#000;border:1px solid var(--ink700);border-radius:8px;
+    position:relative;cursor:pointer;overflow:hidden;padding:0}
+  .marks button[aria-selected=true]{border-color:var(--accent-bright);border-width:2px}
+  .marks .rule{position:absolute;left:8px;right:8px;height:3px;background:var(--ink700);border-radius:2px}
+  .marks .m-band{position:absolute;left:0;right:0;height:14px;top:15px;
+    background:color-mix(in srgb,var(--accent) 14%,transparent)}
+  .marks .m-line{position:absolute;left:0;right:0;top:21px;height:1px;
+    background:color-mix(in srgb,var(--accent) 45%,transparent)}
+  .marks .m-dot{position:absolute;left:50%;top:17px;width:9px;height:9px;margin-left:-4.5px;
+    background:color-mix(in srgb,var(--accent) 70%,transparent);transform:rotate(45deg)}
+  .seg.wrap{flex-wrap:wrap}
+  button.card{display:flex;align-items:center;gap:12px;text-align:left;width:100%;
+    background:var(--ink850);border:1px solid var(--ink700);border-radius:12px;padding:14px;
+    color:var(--ink100);font:inherit;cursor:pointer}
+  button.card[aria-pressed=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--ink850))}
+  button.card i{color:var(--ink500);font-style:normal;font-size:12px}
+  button.card em{margin-left:auto;width:22px;height:22px;border-radius:50%;border:1px solid var(--ink700);flex:none}
+  button.card[aria-pressed=true] em{background:var(--accent-bright);border-color:var(--accent-bright)}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="dot" id="dot"></span>
+  <span class="muted" id="status">Conectando…</span>
+  <span class="grow"></span>
+  <div class="seg" id="modes">
+    <button data-mode="prompter" aria-selected="true">Visor</button>
+    <button data-mode="remote" aria-selected="false">Mando</button>
+    <button data-mode="editor" aria-selected="false">Editor</button>
+  </div>
+  <button class="icon" id="gear" title="Ajustes" aria-label="Ajustes">⚙</button>
+</div>
+
+<main>
+  <!-- visor -->
+  <section class="panel on" id="p-prompter">
+    <div class="stage" id="stage-v">
+      <div class="band hide" id="band-v"></div>
+      <div class="mark" id="mark-v"><i class="line"></i><i class="dot2"></i><i class="line"></i></div>
+      <div class="script" id="script-v"></div>
+      <div class="rail"><i id="rail-v"></i></div>
+    </div>
+    <div class="foot small">
+      <span class="muted" id="left-v">—</span>
+      <span class="grow"></span>
+      <span class="muted" id="play-state">En pausa</span>
+    </div>
+  </section>
+
+  <!-- mando -->
+  <section class="panel" id="p-remote">
+    <div class="stage" id="stage-r">
+      <div class="band hide" id="band-r"></div>
+      <div class="mark" id="mark-r"><i class="line"></i><i class="dot2"></i><i class="line"></i></div>
+      <div class="script" id="script-r"></div>
+    </div>
+    <div class="foot">
+      <button class="act ghost" id="back5">▲ 5 s</button>
+      <button class="act" id="play">Reproducir</button>
+      <button class="act ghost" id="fwd5">▼ 5 s</button>
+      <span class="grow"></span>
+      <span class="muted" id="left">—</span>
+    </div>
+  </section>
+
+  <!-- editor -->
+  <section class="panel" id="p-editor">
+    <div class="pad">
+      <textarea id="text" placeholder="Escribe aquí el guion…"></textarea>
+      <div class="row"><span class="muted" id="words">0 palabras</span><span class="muted" id="dur">—</span></div>
+      <div class="foot" style="padding-left:0;padding-right:0;background:none;border:0">
+        <button class="act" id="play2">Reproducir</button>
+        <button class="act ghost" id="home">Volver al inicio</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+
+<div class="sheet hide" id="sheet">
+  <div class="sheet-box">
+    <div class="sheet-head">
+      <b>Ajustes</b><span class="grow"></span>
+      <button class="act ghost" id="sheet-close">Listo</button>
+    </div>
+    <div class="sheet-body">
+      <div><div class="row"><label for="readLine">Línea de lectura</label><b id="v-readLine"></b></div>
+        <input type="range" id="readLine" min="0.15" max="0.85" step="0.01"></div>
+
+      <div>
+        <label>Marca de lectura</label>
+        <div class="marks" id="marks"></div>
+      </div>
+
+      <div><div class="row"><label for="speed">Velocidad</label><b id="v-speed"></b></div>
+        <input type="range" id="speed" min="1" max="100" step="1"></div>
+      <div><div class="row"><label for="fontSize">Letra del visor</label><b id="v-fontSize"></b></div>
+        <input type="range" id="fontSize" min="24" max="160" step="2"></div>
+      <div><div class="row"><label for="lineHeight">Interlineado</label><b id="v-lineHeight"></b></div>
+        <input type="range" id="lineHeight" min="1" max="2.5" step="0.05"></div>
+      <div><div class="row"><label for="margin">Márgenes del visor</label><b id="v-margin"></b></div>
+        <input type="range" id="margin" min="0" max="30" step="1"></div>
+
+      <div>
+        <label>Letra de este navegador</label>
+        <div class="seg wrap" id="localsize"></div>
+      </div>
+
+      <button class="card" id="mirrorH">
+        <span><b>Espejo horizontal</b><br><i>Para leer a través del cristal</i></span><em></em>
+      </button>
+      <button class="card" id="mirrorV">
+        <span><b>Espejo vertical</b><br><i>Para el visor colocado del revés</i></span><em></em>
+      </button>
+
+      <button class="act ghost" id="home2">Volver al inicio</button>
+    </div>
+  </div>
+</div>
+
+<div class="gate hide" id="gate">
+  <div>Esta sesión pide un código</div>
+  <input id="code" inputmode="numeric" maxlength="4" placeholder="0000">
+  <button class="act" id="enter">Entrar</button>
+  <div class="muted" id="gate-msg"></div>
+</div>
+
+<script>
+"use strict";
+// El puerto del WebSocket lo inyecta el servidor al servir esta página: el
+// protocolo vive en su propio puerto y esto se sirve en otro.
+const WS_PORT = window.__WS_PORT__ || location.port;
+const CODE_FROM_URL = new URLSearchParams(location.search).get("code");
+
+// ---- las mismas constantes que la app nativa; cambiarlas aquí a solas
+// descuadra la sensación respecto de los demás aparatos.
+const FOLLOW_TAU = 0.09, SETTLED = 0.0002, HOLD_MS = 400;
+const VIEWER_REPORT = 200, VIEWER_MIN_MOVE = 0.0005, REMOTE_PUBLISH = 33;
+const DRAG_SLOP = 10, JUMP_SECONDS = 5, MAX_DELTA = 0.1;
+
+const LIMITS = {speed:[1,100], fontSize:[24,160], lineHeight:[1,2.5], margin:[0,30],
+                position:[0,1], readLine:[0.15,0.85]};
+const clamp = (v,[a,b]) => v < a ? a : v > b ? b : v;
+const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+
+let state = {text:"",playing:false,speed:30,fontSize:64,lineHeight:1.5,margin:8,
+             mirrorH:false,mirrorV:false,position:0,readLine:0.4,readStyle:"lineDot",docHeight:0};
+let mode = "prompter";
+let socket = null, attempt = 0, authed = false, code = CODE_FROM_URL || null;
+
+const MARKS = ["dot","lineDot","line","highlight","highlightLine"];
+const MARK_NAMES = {dot:"Punto",lineDot:"Línea y punto",line:"Línea",
+                    highlight:"Resaltado",highlightLine:"Resaltado y línea"};
+const LOCAL_SIZES = [16,19,22,26,30];
+const LOCAL_KEY = "teleprompter:webFontSize";
+// El tamaño del guion en ESTE navegador. No viaja por la red: cada aparato lee
+// a la distancia que lee, y cambiárselo a los demás sería una impertinencia.
+let localSize = Number(localStorage.getItem(LOCAL_KEY)) || 22;
+// Mientras la puerta esté abierta esperando un código no se reintenta sola:
+// reconectar a ciegas solo gasta intentos y acaba en «demasiados intentos».
+let waitingForCode = false;
+
+const $ = id => document.getElementById(id);
+
+// --------------------------------------------------------------- idioma
+// La página se escribe en español y se traduce al vuelo si el navegador de
+// quien entra no lo es. Un invitado que abre un enlace no debería toparse con
+// un idioma que no habla solo porque el anfitrión sea de aquí.
+const EN = !(navigator.language || "es").toLowerCase().startsWith("es");
+const ES_EN = {
+  "Conectando…":"Connecting…", "Conectado":"Connected", "Reconectando…":"Reconnecting…",
+  "Visor":"Viewer", "Mando":"Remote", "Editor":"Editor", "Ajustes":"Settings",
+  "Listo":"Done", "Entrar":"Enter", "Reproducir":"Play", "Pausar":"Pause",
+  "En pausa":"Paused", "En marcha":"Running",
+  "Volver al inicio":"Back to start",
+  "Escribe aquí el guion…":"Write the script here…",
+  "Línea de lectura":"Reading line", "Marca de lectura":"Reading mark",
+  "Velocidad":"Speed", "Letra del visor":"Viewer text size",
+  "Interlineado":"Line spacing", "Márgenes del visor":"Viewer margins",
+  "Letra de este navegador":"Text size in this browser",
+  "Espejo horizontal":"Horizontal mirror", "Espejo vertical":"Vertical mirror",
+  "Para leer a través del cristal":"For reading through the glass",
+  "Para el visor colocado del revés":"For a viewer mounted upside down",
+  "Esta sesión pide un código":"This session asks for a code",
+  "Ese código no es.":"That code isn't right.",
+  "Demasiados intentos. Espera un poco y recarga.":
+    "Too many attempts. Wait a moment and reload.",
+  "sin medir todavía":"not measured yet",
+  "conecta un visor para estimar":"connect a viewer to estimate",
+  "Punto":"Dot", "Línea y punto":"Line and dot", "Línea":"Line",
+  "Resaltado":"Highlight", "Resaltado y línea":"Highlight and line",
+  "quedan":"left", "palabra":"word", "palabras":"words",
+};
+const T = t => EN ? (ES_EN[t] ?? t) : t;
+
+if (EN) {
+  document.documentElement.lang = "en";
+  // Se traduce lo que ya está escrito en el HTML; lo que se genera después
+  // pasa por T() en el sitio donde se genera.
+  const anda = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const nodos = [];
+  while (anda.nextNode()) nodos.push(anda.currentNode);
+  for (const n of nodos) {
+    const t = n.nodeValue.trim();
+    if (t && ES_EN[t]) n.nodeValue = n.nodeValue.replace(t, ES_EN[t]);
+  }
+  for (const el of document.querySelectorAll("[placeholder],[title],[aria-label]")) {
+    for (const attr of ["placeholder", "title", "aria-label"]) {
+      const v = el.getAttribute(attr);
+      if (v && ES_EN[v]) el.setAttribute(attr, ES_EN[v]);
+    }
+  }
+}
+
+
+// ------------------------------------------------------------------ red
+function connect(){
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  socket = new WebSocket(`${proto}//${location.hostname}:${WS_PORT}/ws`);
+
+  socket.addEventListener("open", () => {
+    attempt = 0;
+    setStatus("online", T("Conectado"));
+    send({type:"hello", role:mode, code});
+  });
+
+  socket.addEventListener("message", ev => {
+    let m; try { m = JSON.parse(ev.data); } catch { return; }
+    if (m.type === "state"){
+      authed = true; $("gate").classList.add("hide");
+      Object.assign(state, m.state); adopt(m.state.position); refreshAll();
+    } else if (m.type === "patch"){
+      Object.assign(state, m.patch);
+      if (m.patch.position !== undefined) aim(m.patch.position);
+      refreshAll();
+    } else if (m.type === "error"){
+      // El anfitrión nos echa. En el protocolo esto viaja como «error» con la
+      // razón dentro, no como «rejected»: los nombres son los del servidor.
+      authed = false; code = null; waitingForCode = true;
+      $("gate").classList.remove("hide");
+      $("gate-msg").textContent = T(m.error === "too-many-attempts"
+        ? "Demasiados intentos. Espera un poco y recarga."
+        : "Ese código no es.");
+    }
+  });
+
+  socket.addEventListener("close", () => {
+    setStatus("off", T("Reconectando…"));
+    // Perder el anfitrión con el guion en marcha es peligroso en cámara: se
+    // para en local y se conserva la posición.
+    state.playing = false; refreshControls();
+    if (waitingForCode) return;
+    attempt++;
+    setTimeout(connect, Math.min(500 * 2 ** (attempt - 1), 5000));
+  });
+  socket.addEventListener("error", () => socket.close());
+}
+function send(m){ if (socket && socket.readyState === 1) socket.send(JSON.stringify(m)); }
+function update(patch){ Object.assign(state, patch); send({type:"update", patch}); refreshAll(); }
+function setStatus(cls, text){ $("dot").className = "dot " + cls; $("status").textContent = text; }
+
+// ------------------------------------------------- motor de desplazamiento
+// Posición normalizada 0..1 fuera del ciclo de pintado, como en la app: los
+// rellenos suman el alto entero del hueco, así que el recorrido medido es
+// exactamente la altura del texto y la posición significa lo mismo en todas
+// las pantallas.
+let pos = 0, travel = {}, target = null, holdUntil = 0, dragging = false;
+let lastReported = null, lastPublished = null, lastReportAt = 0, lastPublishAt = 0;
+
+function stageOf(){ return mode === "remote" ? "r" : "v"; }
+function measure(){
+  for (const k of ["v","r"]){
+    const stage = $("stage-"+k), script = $("script-"+k);
+    if (!stage || !script) continue;
+    const h = stage.clientHeight;
+    script.style.paddingTop = (h * state.readLine) + "px";
+    script.style.paddingBottom = (h * (1 - state.readLine)) + "px";
+    travel[k] = Math.max(0, script.scrollHeight - h);
+  }
+  // Solo el visor mide para todos: el mando tiene otra letra y otro tamaño.
+  if (mode === "prompter" && travel.v && Math.abs(travel.v - state.docHeight) > 1){
+    update({docHeight: travel.v});
+  }
+}
+function rate(){
+  const px = (state.speed / 100) * state.fontSize * 4;
+  return state.docHeight > 0 ? px / state.docHeight : 0;
+}
+function aim(t){ target = t; }
+function hold(){ target = null; holdUntil = performance.now() + HOLD_MS; }
+function adopt(p){ pos = clamp01(p); target = null; }
+
+let last = performance.now();
+function frame(now){
+  const delta = Math.min((now - last) / 1000, MAX_DELTA); last = now;
+  const r = rate();
+
+  if (state.playing && r > 0){
+    if (pos >= 1) update({playing:false});
+    else { pos = clamp01(pos + r * delta); if (pos >= 1) update({playing:false}); }
+  }
+
+  // Seguir lo que llega por la red acercándose, nunca saltando. El objetivo
+  // envejece mientras se reproduce: si no, la diferencia se queda clavada en
+  // rate*tau y el seguimiento no termina nunca.
+  if (target !== null && !dragging && now >= holdUntil){
+    if (state.playing && r > 0) target = Math.min(1, target + r * delta);
+    if (Math.abs(target - pos) < SETTLED){ pos = target; target = null; }
+    else pos = pos + (target - pos) * (1 - Math.exp(-delta / FOLLOW_TAU));
+  } else if (now < holdUntil) target = null;
+
+  paint();
+
+  if (mode === "prompter" && target === null && !dragging &&
+      now - lastReportAt > VIEWER_REPORT &&
+      (lastReported === null || Math.abs(pos - lastReported) >= VIEWER_MIN_MOVE)){
+    lastReported = pos; lastReportAt = now; update({position: pos});
+  }
+  requestAnimationFrame(frame);
+}
+function paint(){
+  const k = stageOf(), script = $("script-"+k);
+  if (!script) return;
+  script.style.transform = `translate3d(0,${-pos * (travel[k]||0)}px,0)`;
+  const rail = $("rail-v"); if (rail) rail.style.height = (pos * 100) + "%";
+  const r = rate();
+  const texto = r > 0 ? T("quedan") + " " + fmt((1 - pos) / r) : T("sin medir todavía");
+  for (const id of ["left","left-v"]){ const el = $(id); if (el) el.textContent = texto; }
+}
+const fmt = s => { s = Math.max(0, Math.round(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
+
+// --------------------------------------------------------------- pintado
+function refreshAll(){ refreshScript(); refreshMark(); refreshControls(); measure(); }
+function refreshScript(){
+  for (const k of ["v","r"]){
+    const script = $("script-"+k), stage = $("stage-"+k);
+    script.textContent = state.text;
+    const size = k === "v" ? state.fontSize : localSize;
+    script.style.fontSize = size + "px";
+    script.style.lineHeight = state.lineHeight;
+    script.style.paddingLeft = script.style.paddingRight =
+      (k === "v" ? state.margin : 6) + "%";
+    stage.style.transform =
+      `scale(${state.mirrorH ? -1 : 1},${state.mirrorV ? -1 : 1})`;
+  }
+}
+function refreshMark(){
+  const s = state.readStyle;
+  const band = s === "highlight" || s === "highlightLine";
+  const line = s === "line" || s === "lineDot" || s === "highlightLine";
+  const dot  = s === "dot" || s === "lineDot";
+  for (const k of ["v","r"]){
+    const mark = $("mark-"+k), b = $("band-"+k);
+    const size = k === "v" ? state.fontSize : localSize;
+    mark.style.top = "calc(" + (state.readLine * 100) + "% - 5px)";
+    mark.querySelectorAll(".line").forEach(el => el.style.display = line ? "" : "none");
+    mark.querySelector(".dot2").style.display = dot ? "" : "none";
+    mark.style.display = (line || dot) ? "flex" : "none";
+    b.classList.toggle("hide", !band);
+    b.style.top = (state.readLine * 100) + "%";
+    b.style.height = Math.max(24, size * state.lineHeight) + "px";
+  }
+}
+function refreshControls(){
+  const label = T(state.playing ? "Pausar" : "Reproducir");
+  $("play-state").textContent = T(state.playing ? "En marcha" : "En pausa");
+  $("play-state").style.color = state.playing ? "var(--accent-bright)" : "var(--ink500)";
+  $("mirrorH").setAttribute("aria-pressed", String(state.mirrorH));
+  $("mirrorV").setAttribute("aria-pressed", String(state.mirrorV));
+  document.querySelectorAll("#marks button").forEach(b =>
+    b.setAttribute("aria-selected", String(b.dataset.mark === state.readStyle)));
+  document.querySelectorAll("#localsize button").forEach(b =>
+    b.setAttribute("aria-selected", String(Number(b.dataset.size) === localSize)));
+  $("play").textContent = label; $("play2").textContent = label;
+  if (document.activeElement !== $("text")) $("text").value = state.text;
+  const w = state.text.trim() ? state.text.trim().split(/\s+/).length : 0;
+  $("words").textContent = w + " " + T(w === 1 ? "palabra" : "palabras");
+  const r = rate();
+  $("dur").textContent = r > 0 ? "≈ " + fmt(1 / r) : T("conecta un visor para estimar");
+  for (const key of ["speed","fontSize","lineHeight","margin","readLine"]){
+    const input = $(key);
+    if (document.activeElement !== input) input.value = state[key];
+    $("v-"+key).textContent =
+      key === "lineHeight" ? Number(state[key]).toFixed(2) :
+      key === "readLine" ? Math.round(state[key]*100) + " %" :
+      key === "margin" ? state[key] + " %" : Math.round(state[key]);
+  }
+}
+
+// ---------------------------------------------------------------- gestos
+function bindStage(k){
+  const stage = $("stage-"+k);
+  let id = null, startY = 0, anchor = 0, moved = false;
+
+  stage.addEventListener("pointerdown", e => {
+    if (id !== null) return;
+    id = e.pointerId; startY = e.clientY; anchor = pos; moved = false;
+    stage.setPointerCapture(id);
+  });
+
+  stage.addEventListener("pointermove", e => {
+    if (e.pointerId !== id) return;
+    const dy = e.clientY - startY;
+    if (!moved && Math.abs(dy) < DRAG_SLOP) return;
+    if (!moved){
+      // Se ancla al superar el umbral, no al tocar: si no, el guion pega un
+      // tirón de esos primeros píxeles.
+      moved = true; dragging = true; anchor = pos; startY = e.clientY;
+      if (state.playing) update({playing:false});
+    }
+    const t = travel[k] || 1;
+    pos = clamp01(anchor - (e.clientY - startY) / t);
+    const now = performance.now();
+    if (now - lastPublishAt > REMOTE_PUBLISH){
+      lastPublishAt = now; lastPublished = pos; update({position: pos});
+    }
+  });
+
+  const end = e => {
+    if (e.pointerId !== id) return;
+    stage.releasePointerCapture(id); id = null;
+    if (moved){ dragging = false; hold(); update({position: pos}); }
+    else update({playing: !state.playing});
+  };
+  stage.addEventListener("pointerup", end);
+  stage.addEventListener("pointercancel", end);
+}
+
+// ------------------------------------------------------------- arranque
+function setMode(m){
+  mode = m;
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("on"));
+  $("p-"+m).classList.add("on");
+  document.querySelectorAll("#modes button").forEach(b =>
+    b.setAttribute("aria-selected", String(b.dataset.mode === m)));
+  send({type:"hello", role:m, code});
+  requestAnimationFrame(() => { measure(); paint(); });
+}
+
+document.querySelectorAll("#modes button").forEach(b =>
+  b.addEventListener("click", () => setMode(b.dataset.mode)));
+["play","play2"].forEach(id => $(id).addEventListener("click", () => update({playing: !state.playing})));
+$("home").addEventListener("click", () => { adopt(0); update({position:0, playing:false}); });
+$("back5").addEventListener("click", () => jump(-JUMP_SECONDS));
+$("fwd5").addEventListener("click", () => jump(JUMP_SECONDS));
+function jump(seconds){
+  const r = rate(); if (r <= 0) return;
+  pos = clamp01(pos + r * seconds); hold(); update({position: pos});
+}
+
+let textTimer = null;
+$("text").addEventListener("input", e => {
+  clearTimeout(textTimer);
+  const value = e.target.value;
+  textTimer = setTimeout(() => update({text: value}), 400);
+});
+for (const key of ["speed","fontSize","lineHeight","margin","readLine"]){
+  $(key).addEventListener("input", e =>
+    update({[key]: clamp(parseFloat(e.target.value), LIMITS[key])}));
+}
+$("enter").addEventListener("click", () => {
+  code = $("code").value.trim();
+  if (!code) return;
+  $("gate-msg").textContent = "";
+  $("gate").classList.add("hide");
+  waitingForCode = false;
+  attempt = 0;
+  connect();
+});
+$("code").addEventListener("keydown", e => { if (e.key === "Enter") $("enter").click(); });
+
+// --------------------------------------------------- ajustes de la hoja
+// Las cinco marcas se dibujan de verdad en vez de nombrarse: con cinco
+// nombres no se cabe en el ancho de un móvil, y «línea y punto» se entiende
+// antes viéndolo.
+$("marks").innerHTML = MARKS.map(m => {
+  const band = m === "highlight" || m === "highlightLine";
+  const line = m === "line" || m === "lineDot" || m === "highlightLine";
+  const dot  = m === "dot" || m === "lineDot";
+  const nombre = T(MARK_NAMES[m]);
+  return `<button data-mark="${m}" title="${nombre}" aria-label="${nombre}">
+    <i class="rule" style="top:9px"></i><i class="rule" style="top:31px"></i>
+    ${band ? '<i class="m-band"></i>' : ""}
+    ${line ? '<i class="m-line"></i>' : ""}
+    ${dot ? '<i class="m-dot"></i>' : ""}
+  </button>`;
+}).join("");
+$("marks").addEventListener("click", e => {
+  const b = e.target.closest("button[data-mark]");
+  if (b) update({readStyle: b.dataset.mark});
+});
+
+$("localsize").innerHTML = LOCAL_SIZES
+  .map(n => `<button data-size="${n}">${n}</button>`).join("");
+$("localsize").addEventListener("click", e => {
+  const b = e.target.closest("button[data-size]");
+  if (!b) return;
+  localSize = Number(b.dataset.size);
+  localStorage.setItem(LOCAL_KEY, String(localSize));
+  refreshAll();
+});
+
+$("mirrorH").addEventListener("click", () => update({mirrorH: !state.mirrorH}));
+$("mirrorV").addEventListener("click", () => update({mirrorV: !state.mirrorV}));
+$("home2").addEventListener("click", () => { adopt(0); update({position:0, playing:false}); });
+$("gear").addEventListener("click", () => $("sheet").classList.remove("hide"));
+$("sheet-close").addEventListener("click", () => $("sheet").classList.add("hide"));
+$("sheet").addEventListener("click", e => {
+  // Tocar fuera de la caja cierra, como una hoja de iOS.
+  if (e.target === $("sheet")) $("sheet").classList.add("hide");
+});
+
+bindStage("v"); bindStage("r");
+addEventListener("resize", () => { measure(); paint(); });
+refreshAll();
+requestAnimationFrame(frame);
+connect();
+</script>
+</body>
+</html>

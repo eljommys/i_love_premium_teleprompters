@@ -49,3 +49,15 @@ state.json.tmp
 
 # servidor compilado
 /dist/
+
+# --- apps nativas (apple/)
+# El proyecto de Xcode lo genera XcodeGen a partir de apple/project.yml, que es
+# la fuente de verdad. Versionarlo solo traería conflictos en un fichero que
+# nadie edita a mano.
+apple/*.xcodeproj
+apple/.build
+apple/Packages/*/.build
+**/xcuserdata/
+
+# Copia de la app de Mac para poder abrirla con doble clic.
+apple/build/
