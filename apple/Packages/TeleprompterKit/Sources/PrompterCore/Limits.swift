@@ -80,4 +80,19 @@ public enum Geometry {
     /// móvil, y **subir o bajar la línea de lectura no mueve el guion de sitio**
     /// ni descuadra lo que ya habían medido los demás aparatos.
     public static func tailPadding(readLine: Double) -> Double { 1 - readLine }
+
+    /// A cuántos puntos hay que desplazar el guion para una posición dada.
+    ///
+    /// Devuelve nil si el resultado no es un número finito, y ese es el motivo
+    /// de que esto exista como función aparte en vez de escrito en cada vista:
+    /// a mitad de maquetación TextKit puede dar un recorrido infinito, y con la
+    /// posición en cero sale `0 × ∞`, o sea NaN. Ese NaN llegaba al origen del
+    /// scroll, y AppKit no valida esa geometría: mata la aplicación con
+    /// «Invalid view geometry». Mejor no pintar ese fotograma.
+    public static func paintOffset(
+        readLine: Double, viewportHeight: Double, position: Double, travel: Double
+    ) -> Double? {
+        let offset = -readLine * viewportHeight + position * travel
+        return offset.isFinite ? offset : nil
+    }
 }

@@ -108,4 +108,31 @@ struct SanitizeTests {
             #expect(abs(travel - textHeight) < 0.0001)
         }
     }
+
+    @Test("un recorrido infinito no llega a la geometría de la vista")
+    func paintOffsetRejectsInfinity() {
+        // El fallo que esto vigila: a mitad de maquetación TextKit devolvía un
+        // recorrido infinito y, con la posición en cero, `0 × ∞` daba NaN. Ese
+        // NaN acababa en el origen del scroll y AppKit mataba la aplicación
+        // con «Invalid view geometry: x is NaN» al cambiar de modo.
+        #expect(Geometry.paintOffset(
+            readLine: 0.4, viewportHeight: 800, position: 0, travel: .infinity) == nil)
+        #expect(Geometry.paintOffset(
+            readLine: 0.4, viewportHeight: 800, position: 0.5, travel: .nan) == nil)
+        #expect(Geometry.paintOffset(
+            readLine: 0.4, viewportHeight: .nan, position: 0.5, travel: 1000) == nil)
+        #expect(Geometry.paintOffset(
+            readLine: .nan, viewportHeight: 800, position: 0.5, travel: 1000) == nil)
+    }
+
+    @Test("con medidas normales el desplazamiento sale donde toca")
+    func paintOffsetIsCorrect() {
+        // Posición 0: la primera línea cae sobre la línea de lectura, así que
+        // el guion está subido justo esa fracción del alto.
+        #expect(Geometry.paintOffset(
+            readLine: 0.4, viewportHeight: 800, position: 0, travel: 5000) == -320)
+        // Al final del guion se ha recorrido todo, menos ese mismo hueco.
+        #expect(Geometry.paintOffset(
+            readLine: 0.4, viewportHeight: 800, position: 1, travel: 5000) == 4680)
+    }
 }

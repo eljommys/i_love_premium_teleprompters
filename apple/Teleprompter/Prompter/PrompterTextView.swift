@@ -94,7 +94,8 @@ struct PrompterTextView {
             bottom = max(bottom, fragment.layoutFragmentFrame.maxY)
             return true
         }
-        return bottom > 0 ? bottom : nil
+        // Solo vale una medida real: mitad de maquetación puede dar infinito.
+        return bottom.isFinite && bottom > 0 ? bottom : nil
     }
 
     @MainActor
@@ -166,9 +167,12 @@ struct PrompterTextView {
             context.coordinator.engine.onPaint = { [weak textView] position in
                 guard let textView else { return }
                 let coordinator = context.coordinator
-                let offset = -coordinator.readLine * coordinator.viewportHeight
-                    + position * coordinator.engine.travel
-                guard coordinator.shouldPaint(offset) else { return }
+                guard let offset = Geometry.paintOffset(
+                    readLine: coordinator.readLine,
+                    viewportHeight: coordinator.viewportHeight,
+                    position: position,
+                    travel: coordinator.engine.travel
+                ), coordinator.shouldPaint(offset) else { return }
                 coordinator.lastPaintedOffset = offset
                 textView.contentOffset = CGPoint(x: 0, y: offset)
             }
@@ -283,9 +287,12 @@ struct PrompterTextView {
             context.coordinator.engine.onPaint = { [weak scrollView] position in
                 guard let scrollView else { return }
                 let coordinator = context.coordinator
-                let offset = -coordinator.readLine * coordinator.viewportHeight
-                    + position * coordinator.engine.travel
-                guard coordinator.shouldPaint(offset) else { return }
+                guard let offset = Geometry.paintOffset(
+                    readLine: coordinator.readLine,
+                    viewportHeight: coordinator.viewportHeight,
+                    position: position,
+                    travel: coordinator.engine.travel
+                ), coordinator.shouldPaint(offset) else { return }
                 coordinator.lastPaintedOffset = offset
                 scrollView.contentView.setBoundsOrigin(NSPoint(x: 0, y: offset))
             }

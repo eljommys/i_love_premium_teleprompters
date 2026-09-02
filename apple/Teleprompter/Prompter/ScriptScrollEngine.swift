@@ -72,7 +72,13 @@ final class ScriptScrollEngine {
     // ------------------------------------------------------------ medida
 
     /// La vista de texto avisa de cuánto ocupa el guion en esta pantalla.
+    ///
+    /// Una medida que no sea un número finito se descarta entera. A mitad de
+    /// maquetación TextKit puede devolver un infinito, y de ahí sale un NaN
+    /// —`0 × ∞`— que acaba en el origen del scroll: AppKit no valida esa
+    /// geometría y mata la aplicación.
     func measured(travel value: Double) {
+        guard value.isFinite else { return }
         let changed = abs(value - travel) > 1
         travel = max(0, value)
         paint()
