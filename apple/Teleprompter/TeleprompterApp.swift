@@ -13,6 +13,23 @@ struct TeleprompterApp: App {
                 .environment(model)
                 .preferredColorScheme(.dark)
                 .task { model.start() }
+                #if DEBUG
+                    // Andamio de pruebas: reproduce a mano lo que hizo quien
+                    // revisó la app —cambiar de modo una y otra vez— sin
+                    // necesitar tocar la interfaz. Nunca entra en Release.
+                    .task {
+                        guard CommandLine.arguments.contains("-cycleModes") else { return }
+                        let modos = AppModel.Mode.allCases
+                        var i = 0
+                        while !Task.isCancelled {
+                            try? await Task.sleep(for: .milliseconds(700))
+                            i += 1
+                            let siguiente = modos[i % modos.count]
+                            FileHandle.standardError.write(Data("ciclo -> \(siguiente.rawValue)\n".utf8))
+                            model.select(siguiente)
+                        }
+                    }
+                #endif
                 .onOpenURL { url in
                     // El QR de invitación trae dentro el código, así que
                     // escanearlo une sin teclear nada.
